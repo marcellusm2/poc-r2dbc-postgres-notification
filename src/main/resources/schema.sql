@@ -1,25 +1,32 @@
-CREATE OR REPLACE FUNCTION notify_event() RETURNS TRIGGER AS
+CREATE OR REPLACE FUNCTION notify_accounts_event() RETURNS TRIGGER AS
 $$
-DECLARE
-    payload JSON;
 BEGIN
-    payload = row_to_json(NEW);
-    PERFORM pg_notify('login_event_notification', payload::text);
+    PERFORM pg_notify('accounts_event_notification', row_to_json(NEW)::text);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;;
+$$ LANGUAGE plpgsql;
 
-CREATE TABLE IF NOT EXISTS login_event
-(
-    id         serial PRIMARY KEY,
-    username   varchar(255),
-    login_time timestamp
-);;
+DROP TRIGGER IF EXISTS notify_accounts_event ON pgbench_accounts;
 
-DROP TRIGGER IF EXISTS notify_login_event ON login_event;;
-
-CREATE TRIGGER notify_login_event
+CREATE TRIGGER notify_accounts_event
     AFTER INSERT OR UPDATE OR DELETE
-    ON login_event
+    ON pgbench_accounts
     FOR EACH ROW
-EXECUTE PROCEDURE notify_event();;
+EXECUTE PROCEDURE notify_accounts_event();
+
+
+CREATE OR REPLACE FUNCTION notify_poi_event() RETURNS TRIGGER AS
+$$
+BEGIN
+    PERFORM pg_notify('poi_event_notification', row_to_json(NEW)::text);
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS notify_poi_event ON purchase_order_item;
+
+CREATE TRIGGER notify_poi_event
+    AFTER INSERT OR UPDATE OR DELETE
+    ON purchase_order_item
+    FOR EACH ROW
+EXECUTE PROCEDURE notify_poi_event();
